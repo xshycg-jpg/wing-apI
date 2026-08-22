@@ -14,8 +14,8 @@ else:
     st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
 
-# 안정적인 제미나이 플래시 모델 설정
-model = genai.GenerativeModel('gemini-3.6-flash')
+# 안정적인 제미나이 플래시 모델 설정 (버전 에러 방지를 위해 1.5로 고정)
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.set_page_config(
     page_title="부동산 AI 비서 '날개'", 
@@ -25,14 +25,30 @@ st.set_page_config(
 )
 
 # -------------------------------------------------------------
-# 구글 스프레드시트 연결 함수
+# 구글 스프레드시트 연결 함수 (인증 정보를 코드에 직접 포함)
 # -------------------------------------------------------------
 def get_google_sheet():
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
     ]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    
+    # 제공해주신 인증 정보를 딕셔너리로 직접 정의[cite: 1]
+    creds_dict = {
+        "type": "service_account",
+        "project_id": "wing-project-506315",
+        "private_key_id": "52ac1079994edbecc943ce7b81de36f42d0503c2",
+        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC8B6u507epAEB5\n5zPXX+5vA5Ckl3Cn0sRSbLX4dh2KWYeXeSGpsKU1eOomtWDQKwWEnlPIqSzAnbDO\n+N1RVFZopBFrmwEelPtpl7V2kXN+rmPOSwpCfAq0PbvSfMwVGIGpxBAIW8eq7EWh\nP9PAgpzQvU4ma8mqMQrmV2abfjmJbfwG4juPb5a3or+pgVQv/C5mVWFQUlWjb8aE\nJMgcrePw9VHiyXHQ7GjpHDo2XLP9s7nXKGB10ot9lgT9LEp2WXAnoe7oaHb6N/sv\nLUM7iXdfJP6kHf6iTN7kbhlkiz3QUm9vAPxRYe3m+Q+I87eBDvyHQXxftcB4ztxh\nE1p5fxD/AgMBAAECggEABci2n6DDpY88bIOQNK/exct2R5ng/UiegWqWrm3zuq3G\nXgJ75pxoeJyfl1E9CSpJoSq9qQ6LMeGn7rX5GOdfQRjK8GR0RFyQ306rZlpTEzKK\nH25vglwOeDzt6iusm3mFg5Nkat1n5vodqjgsa1+ZM1KfdM8cBQA9NZi6r03St0d9\nVnTJ2OrH8B/9Bt2F0SYDQP8ixLZ/HpuUTfQQIO+ynd8Y/kCKeZxEstXz1FVwGr8U\nfRPKrVTU4oJMsipPNe27GenOq5+l3G3l6d5Z0s8hZlHkHljrZLBbM0EAbG7UQzA8\nSwGYv10reJrCVQ8dYpbeOGd/0AOGtNwiAreonWE2AQKBgQDlG7nsjYMbDAkU/ntw\nnY/+cEpWwL5rGjCR9v9w096ZQTQ3sBlyNmKCVEQSGwpQVpa/KIqnMrfSALqghRbZ\niLrH0ehJjpGYPRskGW6M7ksqZSIbqW209HxMxaq002qyU95dg59TH3mxctn76LC5\nLsuaHCCIWmF5GC5wXMwA270KtwKBgQDSGZ4cgVYGedTy8MtjvZ5sBf5fZ8xRgcsG\npHbatovK/sZTbGW/VJpekXXJVxjv0eIn3lOYnJBIzz8MiXrajHv8so/rxbxE0vwI\n5HEJdL3EKFLUugyC3x3KjPW4MbreiBKcrrJ0P2DD2Ork60CmvWfaYkaDUhyRfLXm\nEUXpOvyD+QKBgD9K5pUkDvkU3RlwqDdXP+VhrhfDTZeW954LZ0wLK+6Ypc1Ql+cG\ngTZSAzAhSjshgKm0kIFaMJASZXxc6BAWhssXAR35Bd3R28KgR/slBZzjrYWIy+b2\nt7QZ02v7D/nN05tv9j7nbh4IhZHjGZc/Bz4+0Pn6Rf1HIeUmrbD7A4GHAoGBALpJ\nhpzlvN3/FmbWRLDKR3amldYIFezLNbZNCymAJFE4N6dufIT6QenJ9fMw6+ZwZaNO\nCTdO0swMHm5CVBEF8UWtGdlGuVkY7eoAi42D2mLcEh2WXVOI+0RGWfUY+wUnB8Gv\UIGsVGMyqYuSX/+3/yZubvEvVC9XsX0uIZvb9lwZAoGAapYW5SdqW2QwLqBptkd3\nLLM7+ig+DhZ+F9MQAyQUvIGIulymJjwGys5U2eNXVVgtDsZOovU9X+W/uphZP1Ei\ngvbm1k5fUgVkNM998lwNND5BN/98Zw4PjV60A1CKHreWr0BfCqAUBcm66iOCcPj6\ncuLL4G1shkpDhV+j6yH8Vlg=\n-----END PRIVATE KEY-----\n",
+        "client_email": "wing-33@wing-project-506315.iam.gserviceaccount.com",
+        "client_id": "109482003546462320195",
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/wing-33%40wing-project-506315.iam.gserviceaccount.com",
+        "universe_domain": "googleapis.com"
+    }
+    
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     gspread_client = gspread.authorize(creds)
     sheet = gspread_client.open("wing_memo_db").sheet1
     return sheet
