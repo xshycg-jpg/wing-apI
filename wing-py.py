@@ -1,17 +1,21 @@
 import streamlit as st
 import os
-from openai import OpenAI
+import google.generativeai as genai
 import pandas as pd
 from datetime import datetime, timedelta
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# 1. Streamlit Secrets에서 OpenAI API 키 안전하게 불러오기
-if "OPENAI_API_KEY" in st.secrets:
-    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# 1. Streamlit Secrets에서 API 키 안전하게 불러오기
+if "GEMINI_API_KEY" in st.secrets:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
 else:
-    st.error("🚨 Streamlit Cloud Secrets에 'OPENAI_API_KEY'가 설정되어 있지 않습니다!")
+    st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
+
+# 안정적인 제미나이 플래시 모델 설정
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.set_page_config(
     page_title="부동산 AI 비서 '날개'", 
@@ -79,16 +83,18 @@ if menu == "1. 계약서 OCR 및 데이터 자동화":
     
     if uploaded_file is not None:
         st.image(uploaded_file, caption="업로드된 계약서", use_container_width=True)
-        if st.button("AI 분석 시작"):
-            with st.spinner("AI가 분석 중..."):
+        if st.button("AI OCR 분석 시작"):
+            with st.spinner("AI가 계약서 분석 중..."):
                 try:
-                    # 텍스트 기반 분석 안내 (이미지 처리는 OpenAI Vision 모델 연동 필요)
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": "부동산 계약서 검토 시 필수적으로 확인해야 할 체크리스트를 요약해 줘."}]
-                    )
+                    bytes_data = uploaded_file.getvalue()
+                    prompt = "이 계약서 이미지에서 매도인, 매수인, 계약일, 중도금, 잔금, 거래 금액을 찾아내어 보기 쉽게 요약해 주고, 법정 중개 보수도 대략적으로 계산해 줘."
+                    
+                    response = model.generate_content([
+                        {"mime_type": uploaded_file.type, "data": bytes_data},
+                        prompt
+                    ])
                     st.success("분석 완료!")
-                    st.write(response.choices[0].message.content)
+                    st.write(response.text)
                 except Exception as e:
                     st.error(f"오류가 발생했습니다: {e}")
 
@@ -104,11 +110,10 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
         if memo_input:
             with st.spinner("AI 분석 및 구글 스프레드시트 연동 저장 중..."):
                 try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": f"다음 상담 내용을 분석하여 핵심 키워드 태그와 깔끔한 요약 문구를 작성해 줘:\n\n{memo_input}"}]
-                    )
-                    ai_result = response.choices[0].message.content
+                    prompt_text = f"다음 상담 내용을 분석하여 핵심 키워드 태그와 깔끔한 요약 문구를 작성해 줘:\n\n{memo_input}"
+                    
+                    response = model.generate_content(prompt_text)
+                    ai_result = response.text
                     
                     st.success("메모 분석 완료!")
                     st.write(ai_result)
@@ -147,13 +152,12 @@ elif menu == "3. AI 기반 상담 프로파일링":
         if client_talk:
             with st.spinner("고객의 심리와 대응 전략 분석 중..."):
                 try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[{"role": "user", "content": f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"}]
-                    )
+                    prompt = f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"
+                    
+                    response = model.generate_content(prompt)
                     
                     st.success("분석 완료!")
-                    st.write(response.choices[0].message.content)
+                    st.write(response.text)
                 except Exception as e:
                     st.error(f"분석 중 오류가 발생했습니다: {e}")
         else:
@@ -177,8 +181,5 @@ elif menu == "5. 일정 관리 및 자동 특약 생성":
     property_info = st.text_input("특이사항 입력")
     if st.button("특약 생성"):
         if property_info:
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": f"안전한 부동산 특약 조항 작성해 줘: {property_info}"}]
-            )
-            st.write(response.choices[0].message.content)
+            response = model.generate_content(f"안전한 부동산 특약 조항 작성해 줘: {property_info}")
+            st.write(response.text)
