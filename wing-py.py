@@ -163,17 +163,31 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
 # -------------------------------------------------------------
 # 3. AI 기반 상담 프로파일링
 # -------------------------------------------------------------
+# -------------------------------------------------------------
+# 3. AI 기반 상담 프로파일링
+# -------------------------------------------------------------
 elif menu == "3. AI 기반 상담 프로파일링":
     st.header("🧠 AI 상담 프로파일링")
     client_talk = st.text_area("고객의 발언 입력:")
-    if st.button("속마음 분석"):
+    
+    if st.button("속마음 분석 시작"):
         if client_talk:
-            response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=f"고객 속마음과 대응 전략 분석해 줘: {client_talk}"
-            )
-            st.write(response.text)
-
+            with st.spinner("고객의 심리와 대응 전략 분석 중..."):
+                try:
+                    prompt = f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"
+                    
+                    # 최신 클라이언트 호출 방식 적용
+                    response = client.models.generate_content(
+                        model='gemini-1.5-flash',
+                        contents=prompt
+                    )
+                    
+                    st.success("분석 완료!")
+                    st.write(response.text)
+                except Exception as e:
+                    st.error(f"분석 중 오류가 발생했습니다: {e}")
+        else:
+            st.warning("고객의 발언을 입력해주세요.")
 # -------------------------------------------------------------
 # 4. 시각화된 매물 관리 시스템
 # -------------------------------------------------------------
