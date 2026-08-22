@@ -6,7 +6,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
 # API 키 설정
-API_KEY = "AQ.Ab8RN6Irp02eB6duDiyL_4l-Tscpgic-WgAq-dehYvs0Dk5IuQ"
+API_KEY = "AQ.Ab8RN6LUubRypToHNyMSw-kjzwUbroS_YTtQwR-4xATqmZV4rg"
 genai.configure(api_key=API_KEY)
 
 # Gemini 모델 설정
