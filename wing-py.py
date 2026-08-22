@@ -123,22 +123,23 @@ if menu == "1. 계약서 OCR 및 데이터 자동화":
                     st.error(f"오류가 발생했습니다: {e}")
 
 # -------------------------------------------------------------
-# 2. 스마트 메모 및 파일 업로드 통합 분석 & 저장
+# 2. 스마트 메모 및 구글 시트 자동 저장 연동
 # -------------------------------------------------------------
 elif menu == "2. 스마트 메모 및 파일 업로드 분석":
-    st.header("📝 스마트 메모 및 파일 업로드 분석")
-    st.write("상담 내용을 텍스트로 직접 입력하거나, 관련 파일(문서, 이미지, 오디오 등)을 업로드하여 AI 분석을 진행하세요.")
+    st.header("📝 스마트 메모 및 구글 시트 자동 저장")
+    st.write("상담 내용을 입력하거나 파일을 업로드하면, AI 분석과 동시에 **구글 스프레드시트**에 자동으로 기록됩니다.")
     
     memo_input = st.text_area("상담 내용을 직접 입력하세요")
-    uploaded_memo_file = st.file_uploader("상담 관련 파일 업로드 (이미지, PDF, 문서, 오디오 등)", type=["png", "jpg", "jpeg", "pdf", "txt", "mp3", "wav"])
+    uploaded_memo_file = st.file_uploader("상담 관련 파일 업로드 (이미지, PDF, 문서 등)", type=["png", "jpg", "jpeg", "pdf", "txt"])
     
-    if st.button("메모/파일 AI 분석 및 저장"):
+    if st.button("AI 분석 및 구글 시트 자동 저장"):
         if memo_input or uploaded_memo_file:
-            with st.spinner("AI가 내용을 분석 중입니다..."):
+            with st.spinner("AI 분석 및 구글 시트 전송 중..."):
                 try:
+                    # 1. AI 분석 수행
                     content_parts = []
                     prompt_text = f"""
-                    다음은 부동산 상담 내용 또는 자료입니다. 이를 분석하여 다음 형식으로 깔끔하게 정리해 주세요:
+                    다음은 부동산 상담 내용입니다. 이를 분석하여 다음 형식으로 깔끔하게 정리해 주세요:
                     1. 핵심 키워드 태그 (예: #매매, #아파트 등)
                     2. 상담 내용 요약
                     3. 고객 요구사항 및 특이사항
@@ -154,45 +155,49 @@ elif menu == "2. 스마트 메모 및 파일 업로드 분석":
                     response = model.generate_content(content_parts)
                     ai_result = response.text
                     
-                    st.success("분석 완료!")
+                    st.success("AI 분석 완료!")
                     st.write(ai_result)
                     
-                    # 세션 메모 리스트에 자동 저장
-                    now_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-                    file_info = uploaded_memo_file.name if uploaded_memo_file else "텍스트 입력"
-                    
-                    st.session_state.memo_list.insert(0, {
-                        "시간": now_time,
-                        "출처": file_info,
-                        "내용": memo_input if memo_input else "(파일 업로드 분석)",
-                        "AI분석": ai_result
-                    })
-                    st.success("💾 앱 내 메모장에 안전하게 저장되었습니다!")
-                    
-                    # 원클릭 노트 저장 버튼 추가
-                    render_save_to_keep_buttons(ai_result, "memo_result")
-                    
+                    # 2. 구글 스프레드시트 자동 저장 연동 로직
+                    # (Streamlit Secrets에 설정된 구글 서비스 계정을 통해 시트에 데이터 추가)
+                    if "gcp_service_account" in st.secrets:
+                        import gspread
+                        from google.oauth2.service_account import Credentials
+                        
+                        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+                        client = gspread.authorize(creds)
+                        
+                        # 연동할 구글 시트 이름 또는 키 입력 (예: '부동산상담기록')
+                        sheet_name = "부동산상담기록" 
+                        try:
+                            sheet = client.open(sheet_name).sheet1
+                        except:
+                            # 시트가 없으면 새로 생성
+                            spreadsheet = client.create(sheet_name)
+                            sheet = spreadsheet.sheet1
+                            sheet.append_row(["시간", "출처", "상담내용", "AI요약"])
+                        
+                        now_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        file_info = uploaded_memo_file.name if uploaded_memo_file else "텍스트 입력"
+                        
+                        # 구글 시트에 행 추가
+                        sheet.append_row([now_time, file_info, memo_input if memo_input else "파일 분석", ai_result])
+                        st.success("☁️ 구글 스프레드시트에 자동으로 안전하게 저장되었습니다!")
+                        
+                    else:
+                        # 시트 설정이 안 되어있을 경우 앱 내 세션 저장으로 대체
+                        now_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        file_info = uploaded_memo_file.name if uploaded_memo_file else "텍스트 입력"
+                        st.session_state.memo_list.insert(0, {
+                            "시간": now_time, "출처": file_info, "내용": memo_input, "AI분석": ai_result
+                        })
+                        st.info("💡 구글 시트 연동 키(Secrets)가 없어 앱 내 메모장에 임시 저장되었습니다.")
+                        
                 except Exception as e:
-                    st.error(f"분석 및 저장 중 오류 발생: {e}")
+                    st.error(f"저장 중 오류 발생: {e}")
         else:
             st.warning("상담 내용을 입력하시거나 파일을 업로드해주세요.")
-            
-    st.write("---")
-    st.subheader("📚 저장된 메모 목록")
-    if st.session_state.memo_list:
-        df_memo = pd.DataFrame(st.session_state.memo_list)
-        st.dataframe(df_memo, use_container_width=True)
-        
-        csv = df_memo.to_csv(index=False).encode('utf-8-sig')
-        st.download_button(
-            label="📥 메모 전체 엑셀(CSV)로 백업하기",
-            data=csv,
-            file_name=f"memo_backup_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-        )
-    else:
-        st.info("아직 저장된 메모가 없습니다.")
-
 # -------------------------------------------------------------
 # 3. AI 기반 상담 프로파일링
 # -------------------------------------------------------------
