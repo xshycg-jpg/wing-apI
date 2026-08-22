@@ -13,7 +13,7 @@ else:
     st.stop()
 
 # 안정적인 제미나이 모델 설정
-model = genai.GenerativeModel('gemini-3.6-flash')
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.set_page_config(
     page_title="부동산 AI 비서 '날개'", 
@@ -51,8 +51,6 @@ def render_save_to_keep_buttons(text_to_save, unique_key):
     st.markdown("---")
     st.markdown("### 📌 구글 킵(Keep) 및 노트에 원클릭 저장")
     
-    # 1. 텍스트 자동 복사 HTML/JS 버튼 (웹뷰/브라우저 클립보드 직행)
-    # 파이썬 자바스크립트 컴포넌트를 이용해 원클릭 복사 구현
     safe_text = text_to_save.replace('"', '\\"').replace('\n', '\\n')
     
     copy_html = f"""
@@ -65,7 +63,6 @@ def render_save_to_keep_buttons(text_to_save, unique_key):
     """
     st.markdown(copy_html, unsafe_allow_html=True)
     
-    # 2. 구글 킵 웹/앱 다이렉트 실행 링크
     st.markdown(
         f"""
         <div style="text-align: center; margin-top: 5px;">
@@ -87,7 +84,7 @@ menu = st.sidebar.selectbox(
     "기능 선택", 
     [
         "1. 계약서 OCR 및 데이터 자동화", 
-        "2. 스마트 메모 및 자동 복사/저장", 
+        "2. 계약서 검토 및 맞춤 특약 추천", 
         "3. AI 기반 상담 프로파일링", 
         "4. 시각화된 매물 관리", 
         "5. 일정 관리 및 캘린더 자동 추가"
@@ -116,7 +113,6 @@ if menu == "1. 계약서 OCR 및 데이터 자동화":
                     st.success("분석 완료!")
                     st.write(response.text)
                     
-                    # 원클릭 노트 저장 버튼 추가
                     render_save_to_keep_buttons(response.text, "ocr_result")
                     
                 except Exception as e:
@@ -166,8 +162,11 @@ elif menu == "2. 계약서 검토 및 맞춤 특약 추천":
                 st.success("분석이 완료되었습니다!")
                 st.write(response.text)
                 
+                render_save_to_keep_buttons(response.text, "contract_result")
+                
             except Exception as e:
                 st.error(f"분석 중 오류가 발생했습니다: {e}")
+
 # -------------------------------------------------------------
 # 3. AI 기반 상담 프로파일링 (텍스트 & 파일 업로드 지원)
 # -------------------------------------------------------------
@@ -202,6 +201,8 @@ elif menu == "3. AI 기반 상담 프로파일링":
                     st.success("분석 완료!")
                     st.write(response.text)
                     
+                    render_save_to_keep_buttons(response.text, "profile_result")
+                    
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
         else:
@@ -217,7 +218,6 @@ elif menu == "4. 시각화된 매물 관리":
         df = pd.read_excel(uploaded_excel)
         st.dataframe(df)
         
-        # 매물 요약 분석 기능 추가
         if st.button("AI 매물 데이터 브리핑 생성"):
             with st.spinner("매물 데이터 분석 중..."):
                 try:
@@ -226,7 +226,6 @@ elif menu == "4. 시각화된 매물 관리":
                     st.success("브리핑 생성 완료!")
                     st.write(response.text)
                     
-                    # 원클릭 노트 저장 버튼 추가
                     render_save_to_keep_buttons(response.text, "property_result")
                 except Exception as e:
                     st.error(f"분석 오류: {e}")
