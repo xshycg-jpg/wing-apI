@@ -1,20 +1,21 @@
 import streamlit as st
 import os
-from google import genai
+import google.generativeai as genai
 import pandas as pd
 from datetime import datetime, timedelta
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 환경 변수 강제 설정
+# 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 설정
 if "GEMINI_API_KEY" in st.secrets:
-    api_key_value = st.secrets["GEMINI_API_KEY"]
-    os.environ["GEMINI_API_KEY"] = api_key_value
-    # 최신 클라이언트 생성 (인증 충돌 방지)
-    client = genai.Client()
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
 else:
     st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
+
+# 가장 안정적인 모델 설정
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 st.set_page_config(
     page_title="부동산 AI 비서 '날개'", 
@@ -85,16 +86,15 @@ if menu == "1. 계약서 OCR 및 데이터 자동화":
         if st.button("AI OCR 분석 시작"):
             with st.spinner("AI가 계약서 분석 중..."):
                 try:
+                    # 파일 데이터 읽기 (bytes)
                     bytes_data = uploaded_file.getvalue()
                     prompt = "이 계약서 이미지에서 매도인, 매수인, 계약일, 중도금, 잔금, 거래 금액을 찾아내어 보기 쉽게 요약해 주고, 법정 중개 보수도 대략적으로 계산해 줘."
                     
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=[
-                            {"mime_type": uploaded_file.type, "data": bytes_data},
-                            prompt
-                        ]
-                    )
+                    # 구형 SDK 멀티모달 호출 방식
+                    response = model.generate_content([
+                        {"mime_type": uploaded_file.type, "data": bytes_data},
+                        prompt
+                    ])
                     st.success("분석 완료!")
                     st.write(response.text)
                 except Exception as e:
@@ -114,10 +114,7 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
                 try:
                     prompt_text = f"다음 상담 내용을 분석하여 핵심 키워드 태그와 깔끔한 요약 문구를 작성해 줘:\n\n{memo_input}"
                     
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt_text
-                    )
+                    response = model.generate_content(prompt_text)
                     ai_result = response.text
                     
                     st.success("메모 분석 완료!")
@@ -159,10 +156,7 @@ elif menu == "3. AI 기반 상담 프로파일링":
                 try:
                     prompt = f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"
                     
-                    response = client.models.generate_content(
-                        model='gemini-1.5-flash',
-                        contents=prompt
-                    )
+                    response = model.generate_content(prompt)
                     
                     st.success("분석 완료!")
                     st.write(response.text)
@@ -189,8 +183,5 @@ elif menu == "5. 일정 관리 및 자동 특약 생성":
     property_info = st.text_input("특이사항 입력")
     if st.button("특약 생성"):
         if property_info:
-            response = client.models.generate_content(
-                model='gemini-1.5-flash',
-                contents=f"안전한 부동산 특약 조항 작성해 줘: {property_info}"
-            )
+            response = model.generate_content(f"안전한 부동산 특약 조항 작성해 줘: {property_info}")
             st.write(response.text)
