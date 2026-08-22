@@ -30,13 +30,15 @@ st.set_page_config(
 # -------------------------------------------------------------
 # 구글 스프레드시트 연결 함수 (Raw 문자열을 사용하여 에러 방지)
 # -------------------------------------------------------------
+# -------------------------------------------------------------
+# 구글 스프레드시트 연결 함수 (고유 ID로 강제 고정)
+# -------------------------------------------------------------
 def get_google_sheet():
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
     ]
     
-    # 문자열 앞에 r을 붙여 백슬래시(\) 이스케이프 에러를 방지합니다.
     creds_dict = {
         "type": "service_account",
         "project_id": "wing-project-506315",
@@ -80,9 +82,11 @@ cuLL4G1shkpDhV+j6yH8Vlg=
     
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     gspread_client = gspread.authorize(creds)
-    sheet = gspread_client.open("wing_memo_db").sheet1
+    
+    # 파일 이름 대신 공유해주신 스프레드시트 고유 ID로 직접 연결
+    spreadsheet_id = "1SKhSByHjTsEu-luw7anB9Ec4R3GO8A52LBQ2En6F8KM"
+    sheet = gspread_client.open_by_key(spreadsheet_id).sheet1
     return sheet
-
 # -------------------------------------------------------------
 # 보안용 로그인 비밀번호 설정
 # -------------------------------------------------------------
