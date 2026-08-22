@@ -1,17 +1,21 @@
 import streamlit as st
+import os
 from google import genai
 import pandas as pd
 from datetime import datetime, timedelta
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 검증
+# 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 환경 변수 강제 설정
 if "GEMINI_API_KEY" in st.secrets:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
+    api_key_value = st.secrets["GEMINI_API_KEY"]
+    # 구글 클라이언트가 헷갈리지 않도록 환경 변수에 명확히 등록
+    os.environ["GEMINI_API_KEY"] = api_key_value
+    # 최신 클라이언트 생성 (환경 변수를 자동으로 참조하게 함)
+    client = genai.Client()
 else:
     st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
-
 # 2. 명확하게 API 키를 지정하여 제미나이 클라이언트 초기화
 from google.ai.generativelanguage_v1beta import types # type: ignore
 # 또는 최신 SDK 방식에서 키를 명시적으로 주입
