@@ -9,19 +9,14 @@ from oauth2client.service_account import ServiceAccountCredentials
 # 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 환경 변수 강제 설정
 if "GEMINI_API_KEY" in st.secrets:
     api_key_value = st.secrets["GEMINI_API_KEY"]
-    # 구글 클라이언트가 헷갈리지 않도록 환경 변수에 명확히 등록
     os.environ["GEMINI_API_KEY"] = api_key_value
-    # 최신 클라이언트 생성 (환경 변수를 자동으로 참조하게 함)
+    # 최신 클라이언트 생성 (인증 충돌 방지)
     client = genai.Client()
 else:
     st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
-# 2. 명확하게 API 키를 지정하여 제미나이 클라이언트 초기화
-from google.ai.generativelanguage_v1beta import types # type: ignore
-# 또는 최신 SDK 방식에서 키를 명시적으로 주입
-client = genai.Client(api_key=str(API_KEY))
+
 st.set_page_config(
- 
     page_title="부동산 AI 비서 '날개'", 
     page_icon="🏡", 
     layout="wide",
@@ -29,24 +24,13 @@ st.set_page_config(
 )
 
 # -------------------------------------------------------------
-# 구글 스프레드시트 연결 함수 (코드 내 직접 통합형)
+# 구글 스프레드시트 연결 함수
 # -------------------------------------------------------------
 def get_google_sheet():
     scope = [
         "https://spreadsheets.google.com/feeds",
         "https://www.googleapis.com/auth/drive"
     ]
-    
-    # 본인의 credentials.json 내용을 여기에 넣어두셨거나 파일로 쓰시는 부분입니다.
-    # 만약 기존 방식(파일 읽기)을 쓰신다면 ServiceAccountCredentials.from_json_keyfile_name 유지 가능
-    try:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
-    except:
-        # 파일이 없다면 Secrets에 넣어둔 딕셔너리로 대체할 수도 있습니다.
-        # 일단 기존처럼 파일을 같은 폴더에 두거나 인증 설정을 유지해주세요.
-        pass
-    
-    # 임시 인증 처리 (만약 credentials.json 파일을 폴더에 두셨다면 아래 코드가 정상 작동합니다)
     creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
     gspread_client = gspread.authorize(creds)
     sheet = gspread_client.open("wing_memo_db").sheet1
@@ -104,7 +88,6 @@ if menu == "1. 계약서 OCR 및 데이터 자동화":
                     bytes_data = uploaded_file.getvalue()
                     prompt = "이 계약서 이미지에서 매도인, 매수인, 계약일, 중도금, 잔금, 거래 금액을 찾아내어 보기 쉽게 요약해 주고, 법정 중개 보수도 대략적으로 계산해 줘."
                     
-                    # 최신 클라이언트 호출 방식
                     response = client.models.generate_content(
                         model='gemini-1.5-flash',
                         contents=[
@@ -131,7 +114,6 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
                 try:
                     prompt_text = f"다음 상담 내용을 분석하여 핵심 키워드 태그와 깔끔한 요약 문구를 작성해 줘:\n\n{memo_input}"
                     
-                    # 최신 클라이언트 호출 방식
                     response = client.models.generate_content(
                         model='gemini-1.5-flash',
                         contents=prompt_text
@@ -141,7 +123,6 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
                     st.success("메모 분석 완료!")
                     st.write(ai_result)
                     
-                    # 구글 스프레드시트에 저장
                     sheet = get_google_sheet()
                     now_time = datetime.now().strftime("%Y-%m-%d %H:%M")
                     sheet.append_row([now_time, memo_input, ai_result])
@@ -168,9 +149,6 @@ elif menu == "2. 스마트 메모 및 실시간 소통":
 # -------------------------------------------------------------
 # 3. AI 기반 상담 프로파일링
 # -------------------------------------------------------------
-# -------------------------------------------------------------
-# 3. AI 기반 상담 프로파일링
-# -------------------------------------------------------------
 elif menu == "3. AI 기반 상담 프로파일링":
     st.header("🧠 AI 상담 프로파일링")
     client_talk = st.text_area("고객의 발언 입력:")
@@ -181,7 +159,6 @@ elif menu == "3. AI 기반 상담 프로파일링":
                 try:
                     prompt = f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"
                     
-                    # 최신 클라이언트 호출 방식 적용
                     response = client.models.generate_content(
                         model='gemini-1.5-flash',
                         contents=prompt
@@ -193,6 +170,7 @@ elif menu == "3. AI 기반 상담 프로파일링":
                     st.error(f"분석 중 오류가 발생했습니다: {e}")
         else:
             st.warning("고객의 발언을 입력해주세요.")
+
 # -------------------------------------------------------------
 # 4. 시각화된 매물 관리 시스템
 # -------------------------------------------------------------
