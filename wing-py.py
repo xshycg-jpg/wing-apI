@@ -1,19 +1,24 @@
 import streamlit as st
 import os
-import google.generativeai as genai
+from openai import OpenAI
 import pandas as pd
 from datetime import datetime, timedelta
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-# 1. Streamlit Secrets에서 API 키 안전하게 불러오기 및 설정
-if "GEMINI_API_KEY" in st.secrets:
-    API_KEY = st.secrets["GEMINI_API_KEY"]
-    genai.configure(api_key=API_KEY)
+# 1. OpenAI API 키 불러오기
+if "OPENAI_API_KEY" in st.secrets:
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 else:
-    st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
+    st.error("🚨 Streamlit Cloud Secrets에 'OPENAI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
 
+# 이후 AI 호출할 때는 아래처럼 사용하시면 됩니다!
+# response = client.chat.completions.create(
+#     model="gpt-4o-mini",
+#     messages=[{"role": "user", "content": prompt}]
+# )
+# ai_answer = response.choices[0].message.content
 # 가장 안정적인 모델 설정
 model = genai.GenerativeModel('gemini-1.5-flash')
 
