@@ -199,28 +199,43 @@ elif menu == "2. 스마트 메모 및 파일 업로드 분석":
         else:
             st.warning("상담 내용을 입력하시거나 파일을 업로드해주세요.")
 # -------------------------------------------------------------
-# 3. AI 기반 상담 프로파일링
+# 3. AI 기반 상담 프로파일링 (텍스트 & 파일 업로드 지원)
 # -------------------------------------------------------------
 elif menu == "3. AI 기반 상담 프로파일링":
-    st.header("🧠 AI 상담 프로파일링")
-    client_talk = st.text_area("고객의 발언 입력:")
+    st.header("🧠 AI 상담 프로파일링 및 심리 분석")
+    st.write("고객과의 대화 내용을 텍스트로 입력하거나, 상담 녹음 파일 및 문서를 업로드하여 심층 분석을 진행하세요.")
     
-    if st.button("속마음 분석 시작"):
-        if client_talk:
-            with st.spinner("고객의 심리와 대응 전략 분석 중..."):
+    client_talk = st.text_area("고객의 발언 또는 상담 내용 직접 입력:")
+    uploaded_profile_file = st.file_uploader("상담 녹음 파일 또는 문서 업로드 (오디오, PDF, 텍스트 등)", type=["mp3", "wav", "m4a", "pdf", "txt", "png", "jpg"])
+    
+    if st.button("고객 속마음 및 대응 전략 분석 시작"):
+        if client_talk or uploaded_profile_file:
+            with st.spinner("고객의 심리와 최적의 중개 대응 전략을 분석 중..."):
                 try:
-                    prompt = f"다음 고객의 발언을 분석하여 숨겨진 속마음과 효과적인 중개 대응 전략을 요약해 줘:\n\n{client_talk}"
-                    response = model.generate_content(prompt)
+                    content_parts = []
+                    prompt_text = f"""
+                    다음은 부동산 고객의 발언 또는 상담 자료입니다. 
+                    이를 바탕으로 다음 항목을 전문적으로 분석해 주세요:
+                    1. 고객의 숨은 심리 및 니즈 (속마음)
+                    2. 거래 성사를 위해 공인중개사가 취해야 할 핵심 대응 전략
+                    3. 예상되는 반대 의견 및 방어 화법
+                    
+                    [직접 입력한 내용]: {client_talk}
+                    """
+                    content_parts.append(prompt_text)
+                    
+                    if uploaded_profile_file is not None:
+                        bytes_data = uploaded_profile_file.getvalue()
+                        content_parts.append({"mime_type": uploaded_profile_file.type, "data": bytes_data})
+                    
+                    response = model.generate_content(content_parts)
                     st.success("분석 완료!")
                     st.write(response.text)
-                    
-                    # 원클릭 노트 저장 버튼 추가
-                    render_save_to_keep_buttons(response.text, "profiling_result")
                     
                 except Exception as e:
                     st.error(f"분석 중 오류 발생: {e}")
         else:
-            st.warning("고객의 발언을 입력해주세요.")
+            st.warning("고객의 발언을 입력하시거나 파일을 업로드해주세요.")
 
 # -------------------------------------------------------------
 # 4. 시각화된 매물 관리 시스템
