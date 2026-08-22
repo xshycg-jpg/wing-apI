@@ -176,7 +176,7 @@ elif menu == "5. 일정 관리 및 캘린더 자동 추가":
     st.header("📅 삼성 캘린더 바로 추가")
     st.write("잔금일 등 일정을 입력하고 버튼을 누르면 삼성 캘린더 앱이 즉시 실행됩니다.")
     
-    event_title = st.text_input("일정 제목", "[잔금] 홍길동 고객님 부동산 계약")
+    event_title = st.text_input("일정 제목", "")
     event_date = st.date_input("잔금일 선택")
     event_memo = st.text_area("상세 메모", "금액 및 특이사항 입력")
     
