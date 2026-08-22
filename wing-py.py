@@ -7,7 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 
 # 1. Streamlit Secrets에서 API 키 안전하게 불러오기
 if "GEMINI_API_KEY" in st.secrets:
-    API_KEY = st.secrets["AQ.Ab8RN6JeNax1CF4IZ64aMhIVCiJHiA4ejPnAGO0_bH_UC8e6aQ"]
+    API_KEY = st.secrets["AQ.Ab8RN6I95SmjsIGZpshUPiuuVp_hIj3OsJLXy_DAtJaAa53-kA"]
 else:
     st.error("🚨 Streamlit Cloud Secrets에 'GEMINI_API_KEY'가 설정되어 있지 않습니다!")
     st.stop()
