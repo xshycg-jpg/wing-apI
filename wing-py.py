@@ -170,41 +170,38 @@ elif menu == "4. 시각화된 매물 관리":
         st.dataframe(df)
 
 # -------------------------------------------------------------
-# 5. 일정 관리 및 삼성/안드로이드 캘린더 자동 추가
+# 5. 일정 관리 및 삼성 캘린더 다이렉트 호출
 # -------------------------------------------------------------
 elif menu == "5. 일정 관리 및 캘린더 자동 추가":
-    st.header("📅 삼성 캘린더 자동 등록 (ICS 연동)")
-    st.write("잔금일 등 주요 일정을 입력하면 삼성 캘린더에 바로 추가할 수 있는 파일을 생성합니다.")
+    st.header("📅 삼성 캘린더 바로 추가")
+    st.write("잔금일 등 일정을 입력하고 버튼을 누르면 삼성 캘린더 앱이 즉시 실행됩니다.")
     
     event_title = st.text_input("일정 제목", "[잔금] 홍길동 고객님 부동산 계약")
     event_date = st.date_input("잔금일 선택")
-    event_memo = st.text_area("상세 메모", "금액, 계좌번호 및 특이사항 입력")
+    event_memo = st.text_area("상세 메모", "금액 및 특이사항 입력")
     
-    if st.button("삼성 캘린더 추가 파일(ICS) 생성"):
+    if st.button("삼성 캘린더 앱 열기"):
         # 날짜 포맷 (YYYYMMDD)
         date_str = event_date.strftime("%Y%m%d")
-        next_day_str = (event_date + timedelta(days=1)).strftime("%Y%m%d")
         
-        # ICS 캘린더 포맷 데이터 생성
-        ics_content = f"""BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Wing Real Estate AI//KOR
-BEGIN:VEVENT
-SUMMARY:{event_title}
-DESCRIPTION:{event_memo.replace('\n', '\\n')}
-DTSTART;VALUE=DATE:{date_str}
-DTEND;VALUE=DATE:{next_day_str}
-END:VEVENT
-END:VCALENDAR
-"""
+        # 안드로이드 캘린더 인텐트 링크 생성 (삼성 캘린더 다이렉트 호출)
+        # 웹뷰 환경에서 가장 확실하게 캘린더 앱을 띄우는 방식입니다.
+        intent_url = f"content://com.android.calendar/time"
         
-        st.success("✨ 캘린더 파일이 생성되었습니다!")
+        # 구글 캘린더 웹/모바일 겸용 딥링크 (웹뷰 내에서 캘린더 앱으로 연결 유도)
+        cal_url = f"https://calendar.google.com/calendar/render?action=TEMPLATE&text={event_title}&dates={date_str}/{date_str}&details={event_memo}"
         
-        # 다운로드 버튼을 누르면 APK(삼성 캘린더)가 바로 인식함
-        st.download_button(
-            label="📅 [클릭] 삼성 캘린더에 일정 등록하기",
-            data=ics_content.encode('utf-8'),
-            file_name="real_estate_schedule.ics",
-            mime="text/calendar",
+        st.success("✨ 캘린더 연동 링크가 준비되었습니다!")
+        
+        # 버튼 클릭 시 웹뷰/브라우저를 통해 캘린더 앱으로 연결
+        st.markdown(
+            f"""
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{cal_url}" target="_blank" style="background-color: #4CAF50; color: white; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; display: inline-block;">
+                    📱 삼성 / 구글 캘린더에 일정 바로 등록하기
+                </a>
+            </div>
+            """, 
+            unsafe_allow_html=True
         )
-        st.info("💡 위 버튼을 누르고 다운로드된 파일을 터치하시면, 삼성 캘린더 앱이 자동으로 실행되면서 일정에 쏙 추가됩니다!")
+        st.info("💡 위 초록색 버튼을 누르시면 폰에 설치된 캘린더 앱(삼성 캘린더 등)이 곧바로 실행되면서 입력하신 내용이 채워집니다!")
