@@ -61,7 +61,7 @@ if not st.session_state.authenticated:
 # 메인 프로그램 시작
 # -------------------------------------------------------------
 st.title("🏡 부동산 AI 비서 '날개'")
-st.write("올인원 AI 중개 솔루션 (구글 스프레드시트 실시간 영구 연동)")
+st.write("올인원 AI 중개 솔루션")
 
 menu = st.sidebar.selectbox(
     "기능 선택", 
