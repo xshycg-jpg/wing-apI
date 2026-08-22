@@ -170,22 +170,41 @@ elif menu == "4. 시각화된 매물 관리":
         st.dataframe(df)
 
 # -------------------------------------------------------------
-# 5. 일정 관리 및 캘린더 자동 추가
+# 5. 일정 관리 및 삼성/안드로이드 캘린더 자동 추가
 # -------------------------------------------------------------
 elif menu == "5. 일정 관리 및 캘린더 자동 추가":
-    st.header("📅 잔금일 및 일정 캘린더 자동 등록")
+    st.header("📅 삼성 캘린더 자동 등록 (ICS 연동)")
+    st.write("잔금일 등 주요 일정을 입력하면 삼성 캘린더에 바로 추가할 수 있는 파일을 생성합니다.")
     
-    event_title = st.text_input("일정 제목 (예: [잔금] 홍길동 고객님 아파트 계약)", "부동산 잔금일")
-    event_date = st.date_input("날짜 선택 (잔금일 등)")
-    event_memo = st.text_area("상세 메모", "금액 및 특이사항 입력")
+    event_title = st.text_input("일정 제목", "[잔금] 홍길동 고객님 부동산 계약")
+    event_date = st.date_input("잔금일 선택")
+    event_memo = st.text_area("상세 메모", "금액, 계좌번호 및 특이사항 입력")
     
-    if st.button("구글 캘린더에 바로 등록하기"):
-        # 날짜 포맷 변환 (YYYYMMDD)
+    if st.button("삼성 캘린더 추가 파일(ICS) 생성"):
+        # 날짜 포맷 (YYYYMMDD)
         date_str = event_date.strftime("%Y%m%d")
+        next_day_str = (event_date + timedelta(days=1)).strftime("%Y%m%d")
         
-        # 구글 캘린더 웹 링크 생성 (클릭 시 폰이나 PC 캘린더로 바로 연동됨)
-        cal_url = f"https://calendar.google.com/calendar/render?action=TEMPLATE&text={event_title}&dates={date_str}/{date_str}&details={event_memo}"
+        # ICS 캘린더 포맷 데이터 생성
+        ics_content = f"""BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Wing Real Estate AI//KOR
+BEGIN:VEVENT
+SUMMARY:{event_title}
+DESCRIPTION:{event_memo.replace('\n', '\\n')}
+DTSTART;VALUE=DATE:{date_str}
+DTEND;VALUE=DATE:{next_day_str}
+END:VEVENT
+END:VCALENDAR
+"""
         
-        st.success("✨ 캘린더 링크가 생성되었습니다!")
-        st.markdown(f"👉 **[구글 캘린더에 일정 즉시 등록하기 클릭]({cal_url})**", unsafe_allow_html=True)
-        st.info("모바일 앱 환경에서도 위 버튼을 누르면 구글 캘린더 앱이 자동으로 열리면서 잔금일이 쏙 들어갑니다!")
+        st.success("✨ 캘린더 파일이 생성되었습니다!")
+        
+        # 다운로드 버튼을 누르면 APK(삼성 캘린더)가 바로 인식함
+        st.download_button(
+            label="📅 [클릭] 삼성 캘린더에 일정 등록하기",
+            data=ics_content.encode('utf-8'),
+            file_name="real_estate_schedule.ics",
+            mime="text/calendar",
+        )
+        st.info("💡 위 버튼을 누르고 다운로드된 파일을 터치하시면, 삼성 캘린더 앱이 자동으로 실행되면서 일정에 쏙 추가됩니다!")
