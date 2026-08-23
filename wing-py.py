@@ -13,7 +13,7 @@ else:
     st.stop()
 
 # 안정적인 제미나이 모델 설정
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-3.6-flash')
 
 st.set_page_config(
     page_title="부동산 AI 비서 '날개'", 
